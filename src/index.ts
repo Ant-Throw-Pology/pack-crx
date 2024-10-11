@@ -237,7 +237,13 @@ const kVersion = Uint8Array.from([3, 0, 0, 0]);
 const kSignatureContext = Uint8Array.from("CRX3 SignedData\x00", ch => ch.charCodeAt(0));
 
 /**
- * Chromium stopped supporting CRX2 in 2017. Don't use this.
+ * Pack a CRX2 extension. Chrome stopped supporting these entirely in version 73.0.3683, which released in October of 2017.
+ * 
+ * @param privateKey The extension's private key.
+ * @param publicKey The extension's public key.
+ * @param contents The zipped contents of the extension. This should contain a `manifest.json` file directly inside it, but we don't validate that in this function.
+ * 
+ * @returns The contents of the packaged extension.
  * 
  * @deprecated
  */
@@ -258,6 +264,15 @@ export function packCrx2(privateKey: Uint8Array, publicKey: Uint8Array, contents
     return result;
 }
 
+/**
+ * Pack a CRX3 extension.
+ * 
+ * @param privateKey The extension's private key.
+ * @param publicKey The extension's public key.
+ * @param contents The zipped contents of the extension. This should contain a `manifest.json` file directly inside it, but we don't validate that in this function.
+ * 
+ * @returns The contents of the packaged extension.
+ */
 export function packCrx3(privateKey: Uint8Array, publicKey: Uint8Array, contents: Uint8Array, rsa?: RSA): Uint8Array {
     let pb = new Pbf();
     crx3.SignedData.write({
@@ -320,6 +335,13 @@ function generateCrx3Signature(privateKey: Uint8Array, signedHeaderData: Uint8Ar
     return Uint8Array.from(rsa.sign(toSign));
 }
 
+/**
+ * Generate an extension's ID (32 characters, a-p) from its public key.
+ * 
+ * @param publicKey The public key of the extension.
+ * 
+ * @returns The generated extension ID.
+ */
 export function generateCrxId(publicKey: Uint8Array): string {
     return createHash("sha256")
         .update(publicKey)
@@ -331,7 +353,17 @@ export function generateCrxId(publicKey: Uint8Array): string {
         .slice(0, 32);
 }
 
-export async function packContents(where: string): Promise<{contents: Uint8Array, manifest: ChromeManifest}> {
+/**
+ * Load a directory from the filesystem into a ZIP archive, using the node:fs API.
+ * 
+ * @param where The path to the directory.
+ */
+export async function packContents(where: string): Promise<{
+    /** The ZIP-encoded data. */
+    contents: Uint8Array,
+    /** The manifest for the extension, parsed as JSON. */
+    manifest: ChromeManifest
+}> {
     const zip = new JSZip();
     let manifest: Promise<Uint8Array> | undefined;
     async function f(loc: string) {
@@ -358,6 +390,16 @@ export async function packContents(where: string): Promise<{contents: Uint8Array
     };
 }
 
+/**
+ * Generate the updates XML file for [serving an extension yourself](https://developer.chrome.com/docs/extensions/how-to/distribute/host-on-linux).
+ * 
+ * @param crxId The extension's ID.
+ * @param url The URL where the extension's CRX file will be hosted.
+ * @param version The extension's version.
+ * @param minChromeVersion The minimum Chrome version that the extension can be installed on.
+ * 
+ * @returns The updates XML text
+ */
 export function generateUpdateXML(crxId: string, url: string, version: string, minChromeVersion?: string): string {
     return `<?xml version='1.0' encoding='UTF-8'?>
 <gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
@@ -383,7 +425,28 @@ export function convertFromPem(key: string, type: "private" | "public"): Uint8Ar
     return Uint8Array.from(new RSA(key, `pkcs8-${type}-pem`).exportKey(`pkcs8-${type}-der`));
 }
 
-export function unpack(crx: Uint8Array): {archive: Uint8Array, crxVersion: 2, key: Uint8Array, sign: Uint8Array} | {archive: Uint8Array, crxVersion: 3, header: CrxFileHeader} {
+/**
+ * Unpack a CRX file and extract its contents as ZIP data.
+ * 
+ * @param crx The CRX to be unpacked.
+ */
+export function unpack(crx: Uint8Array): {
+    /** The ZIP data. */
+    archive: Uint8Array,
+    /** The CRX format version. */
+    crxVersion: 2,
+    /** The extension's public key. */
+    key: Uint8Array,
+    /** The signature over the contents of the extension. */
+    sign: Uint8Array
+} | {
+    /** The ZIP data. */
+    archive: Uint8Array,
+    /** The CRX format version. */
+    crxVersion: 3,
+    /** The header for the CRX file, for signatures and things. */
+    header: CrxFileHeader
+} {
     const abuf = crx.buffer;
     const dv = new DataView(abuf);
     if (kSignature.every((v, i) => dv.getUint8(i) == v)) {
@@ -410,18 +473,31 @@ export function unpack(crx: Uint8Array): {archive: Uint8Array, crxVersion: 2, ke
 }
 
 export interface PackInput {
+    /** The ZIP archive of the contents of the extension, or a path to the folder containing the extension. */
     contents?: Uint8Array | string;
+    /** The private key for the extension, or a path to it. */
     privateKey?: Uint8Array | string | null;
+    /** The size of key to generate, if needed. */
     keySize?: number;
+    /** The public key for the extension, or a path to it. */
     publicKey?: Uint8Array | string | null;
+    /** The instance of NodeRSA to use. */
     rsa?: RSA;
+    /** The extension's ID. */
     id?: string | null;
+    /** The outputted CRX file. */
     crx?: Uint8Array | null;
+    /** The CRX format version to use. Defaults to 3. */
     crxVersion?: number;
+    /** The URL to where the CRX file (not the updates XML) will be hosted. */
     crxUrl?: string;
+    /** The [updates XML file](https://developer.chrome.com/docs/extensions/how-to/distribute/host-on-linux). */
     updateXML?: string | null;
+    /** The extension's version. */
     extVersion?: string | null;
+    /** The minimum Chrome version the extension requires. */
     minChromeVersion?: string | null;
+    /** The extension's [manifest](https://developer.chrome.com/docs/extensions/reference/manifest). */
     manifest?: ChromeManifest | null;
 }
 
@@ -486,6 +562,21 @@ export type TransformPack<I extends PackInput> =
         }>>
     : I;
 
+/**
+ * Use the entirety of this API in one function.
+ * 
+ * @param options An object containing input parameters.
+ * 
+ * If `null` is given for a property, then the function will generate a value for it based on the other properties.
+ * 
+ * If a property requires another but that property is not requested (with `null`), then it is generated and given anyways.
+ * 
+ * If `privateKey` or `publicKey` are strings, `pack` will load the file at each path as a key. If the extension is `.pem`, they are loaded as pkcs8-pem and converted to pkcs8-der.
+ * 
+ * `pack` always returns a `Promise`, even if all of the operations inside are synchronous.
+ * 
+ * However, the return result is the same object as the input - just with the properties modified - so if you *really* want synchronous operations, you can keep a reference to the input object, call the function, and access the synchronous results from that object. Just make sure you don't set `privateKey` or `manifest` to `null` or `contents` to a string, otherwise some of your values might not arrive synchronously.
+ */
 export async function pack<I extends PackInput>(options: I): Promise<TransformPack<I>> {
     if (typeof options.privateKey == "string") {
         try {
@@ -534,7 +625,7 @@ export async function pack<I extends PackInput>(options: I): Promise<TransformPa
     }
     
     if (options.privateKey === null) {
-        options.rsa = new RSA({b: options.keySize || 4096});
+        options.rsa ??= new RSA({b: options.keySize || 4096});
         options.privateKey = Uint8Array.from(options.rsa.exportKey("pkcs8-private-der"));
         options.publicKey = Uint8Array.from(options.rsa.exportKey("pkcs8-public-der"));
     }
