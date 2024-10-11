@@ -1,0 +1,14 @@
+{
+  "name": "pack-crx",
+  "module": "src/index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node-rsa": "^1.1.4"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "node-rsa": "^1.1.1",
+    "pbf": "^4.0.1"
+  }
+}
