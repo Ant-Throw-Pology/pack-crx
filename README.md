@@ -6,8 +6,6 @@ Use of the file system is opt-in, so you can use only `Uint8Array`s if you want/
 
 Fun fact: If you create two extensions from the same private key, they will have the same ID. **Do not do this. Chrome will (probably) treat them as the same extension - one as an update to another.**
 
-Looking for CRX2 packing? Chrome doesn't support it anymore - it returns an invalid header error when you try - so it isn't here. If you want it, head on over to [thom4parisot/crx](https://github.com/thom4parisot/crx).
-
 ## Example
 
 ```ts
@@ -102,7 +100,7 @@ function packCrx3(privateKey: Uint8Array, publicKey: Uint8Array, contents: Uint8
 
 Pack a CRX3 extension.
 
-(param) `privateKey` (`Uint8Array`) - The extension's private key. Don't have one? Generate it with `(await pack({privateKey: null})).privateKey`! \
+(param) `privateKey` (`Uint8Array`) - The extension's private key. \
 (param) `publicKey` (`Uint8Array`) - The extension's public key. \
 (param) `contents` (`Uint8Array`) - The zipped contents of the extension. This should contain a `manifest.json` file directly inside it, but we don't validate that in this function.
 
@@ -116,7 +114,7 @@ function packCrx2(privateKey: Uint8Array, publicKey: Uint8Array, contents: Uint8
 
 Pack a CRX2 extension. Chrome stopped supporting these entirely in version 73.0.3683, which released in October of 2017.
 
-(param) `privateKey` (`Uint8Array`) - The extension's private key. Don't have one? Generate it with `(await pack({privateKey: null})).privateKey`! \
+(param) `privateKey` (`Uint8Array`) - The extension's private key. \
 (param) `publicKey` (`Uint8Array`) - The extension's public key. \
 (param) `contents` (`Uint8Array`) - The zipped contents of the extension. This should contain a `manifest.json` file directly inside it, but we don't validate that in this function.
 
@@ -175,11 +173,11 @@ Unpack a CRX file and extract its contents as ZIP data.
 
 (returns) `object`
 - `archive` (`Uint8Array`) - The ZIP data.
-- `crxVersion` (`3`)
+- `crxVersion` (`3`) - The CRX format version.
 - `header` (`CrxFileHeader`) - The header for the CRX file, for signatures and things.
 OR
 - `archive` (`Uint8Array`) - The ZIP data.
-- `crxVersion` (`2`)
+- `crxVersion` (`2`) - The CRX format version.
 - `key` (`Uint8Array`) - The extension's public key.
 - `sign` (`Uint8Array`) - The signature over the contents of the extension.
 
@@ -193,3 +191,5 @@ function generatePublicKey(privateKey: Uint8Array): Uint8Array
 function convertToPem(key: Uint8Array, type: "private" | "public"): string
 function convertFromPem(key: string, type: "private" | "public"): Uint8Array
 ```
+
+However, they all create new NodeRSA instances which are immediately discarded, so it is recommended to make your own RSA instance (or use the one from `pack`) and its methods to export/import keys.
