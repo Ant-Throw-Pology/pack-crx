@@ -6,6 +6,8 @@ Use of the file system is opt-in, so you can use only `Uint8Array`s if you want/
 
 Fun fact: If you create two extensions from the same private key, they will have the same ID. **Do not do this. Chrome will (probably) treat them as the same extension - one as an update to another.**
 
+Credit to [thom4parisot/crx](https://github.com/thom4parisot/crx) for some parts of the code.
+
 ## Example
 
 ```ts
