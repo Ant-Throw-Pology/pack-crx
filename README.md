@@ -126,7 +126,7 @@ Pack a CRX2 extension. Chrome stopped supporting these entirely in version 73.0.
 function generateCrxId(publicKey: Uint8Array): string
 ```
 
-Generate an extension's ID (24 characters, a-p) from its public key.
+Generate an extension's ID (32 characters, a-p) from its public key.
 
 (param) `publicKey` (`Uint8Array`) - The public key of the extension.
 
