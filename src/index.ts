@@ -521,7 +521,7 @@ export type TransformPack<I extends PackInput> =
             minChromeVersion: undefined extends I["minChromeVersion"] ? null : I["minChromeVersion"];
         }>>
     : I["extVersion"] extends null ?
-        undefined extends I["manifest"] ? never : TransformPack<SetKeys<I, {
+        TransformPack<SetKeys<I, {
             extVersion: string;
             manifest: undefined extends I["manifest"] ? null : I["manifest"];
         }>>
@@ -531,7 +531,9 @@ export type TransformPack<I extends PackInput> =
             manifest: undefined extends I["manifest"] ? null : I["manifest"];
         }>>
     : I["manifest"] extends null ?
-        undefined extends I["contents"] ? never : TransformPack<SetKeys<I, {
+        undefined extends I["contents"] ? never
+        : Uint8Array extends I["contents"] ? never
+        : TransformPack<SetKeys<I, {
             manifest: ChromeManifest;
         }>>
     : I["crx"] extends null ?
