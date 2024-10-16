@@ -2,7 +2,7 @@
   "name": "pack-crx",
   "module": "src/index.ts",
   "type": "module",
-  "version": "1.0",
+  "version": "1.0.0",
   "devDependencies": {
     "@types/bun": "latest",
     "@types/node-rsa": "^1.1.4"
