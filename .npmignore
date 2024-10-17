@@ -1,5 +1,0 @@
-# only here while the bun publish login bug exists
-bunfig.toml
-
-# duh
-node_modules/
