@@ -504,14 +504,14 @@ export interface PackInput {
 type SetKeys<A extends object, B extends object> = {[x in keyof A | keyof B]: x extends keyof B ? unknown extends B[x] ? x extends keyof A ? A[x] : never : B[x] : x extends keyof A ? A[x] : never};
 
 export type TransformPack<I extends PackInput> =
-    I["publicKey"] extends string ?
-        TransformPack<SetKeys<I, {
-            publicKey: Uint8Array | undefined;
-            rsa: RSA;
-        }>>
-    : I["privateKey"] extends string ?
+    I["privateKey"] extends string ?
         TransformPack<SetKeys<I, {
             privateKey: Uint8Array | undefined;
+            rsa: RSA;
+        }>>
+    : I["publicKey"] extends string ?
+        TransformPack<SetKeys<I, {
+            publicKey: Uint8Array | undefined;
         }>>
     : I["updateXML"] extends null ?
         undefined extends I["crxUrl"] ? never : TransformPack<SetKeys<I, {
