@@ -2,7 +2,7 @@
   "name": "pack-crx",
   "module": "src/index.ts",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "devDependencies": {
     "@types/bun": "latest",
     "@types/node-rsa": "^1.1.4"
@@ -12,5 +12,15 @@
     "node-rsa": "^1.1.1",
     "pbf": "^4.0.1"
   },
-  "types": "src/index.d.ts"
+  "types": "src/index.d.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ant-Throw-Pology/pack-crx.git"
+  },
+  "homepage": "https://github.com/Ant-Throw-Pology/pack-crx",
+  "bugs": {
+    "url": "https://github.com/Ant-Throw-Pology/pack-crx"
+  },
+  "keywords": ["crx", "crx3", "chrome", "extension"]
 }
